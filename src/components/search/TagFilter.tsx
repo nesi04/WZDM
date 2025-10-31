@@ -16,8 +16,8 @@ export default function TagFilter({ tags, selectedTag, onSelectTag, onClearTag }
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-2">
-        <Tag size={16} className="text-gray-500 dark:text-gray-400" />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by tag:</span>
+        <Tag size={16} className="text-third dark:text-gray-400" />
+        <span className="text-sm font-medium text-third dark:text-gray-300">Filter by tag:</span>
       </div>
       <div className="flex flex-wrap gap-2">
         {tags.map((tag) => (
@@ -27,7 +27,7 @@ export default function TagFilter({ tags, selectedTag, onSelectTag, onClearTag }
             className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-full transition-colors ${
               selectedTag === tag
                 ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50'
+                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-secondary dark:hover:bg-blue-900/50'
             }`}
           >
             <Tag size={10} />

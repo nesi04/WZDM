@@ -4,6 +4,7 @@
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useEffect, useState } from 'react'
+import {motion, scale} from 'motion/react'
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
@@ -21,9 +22,11 @@ export default function ThemeToggle() {
   }
 
   return (
-    <button
+    <motion.button
       onClick={handleClick}
-      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      whileHover={{scale:1.1}}
+            whileTap={{scale:0.95}}
+      className="p-2 rounded-lg bg-secondary dark:bg-gray-800  transition-colors"
       title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (
@@ -31,6 +34,6 @@ export default function ThemeToggle() {
       ) : (
         <Sun size={20} className="text-yellow-400" />
       )}
-    </button>
+    </motion.button>
   )
 }

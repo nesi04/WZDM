@@ -15,7 +15,7 @@ export default function MarkdownEditor({
   onChange, 
   placeholder = 'Write your note in Markdown...' 
 }: MarkdownEditorProps) {
-  const [mode, setMode] = useState<'edit' | 'preview' | 'live'>('live')
+  const [mode, setMode] = useState<'edit' | 'preview' | 'live'>('edit')
   const [mounted, setMounted] = useState(false)
   const [MDEditor, setMDEditor] = useState<any>(null)
 

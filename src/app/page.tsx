@@ -1,5 +1,6 @@
-"use client";
 
+"use client";
+import { AnimatePresence, motion } from "motion/react";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -9,16 +10,18 @@ import NoteCard from "@/components/notes/NoteCard";
 import NoteForm from "@/components/notes/NoteForm";
 import SearchBar from "@/components/search/SearchBar";
 import TagFilter from "@/components/search/TagFilter";
-import { MessageSquare, PlusCircle } from "lucide-react";
-import ChatPanel from "@/components/chat/ChatPanel";
+import { PlusCircle } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import Selection from "@/components/layout/Selection";
+import { LoaderTwo } from "@/components/ui/loader";
+import { FlipWords } from "@/components/ui/flip-words";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const view = searchParams.get('view') || 'all';
-  
+
   const {
     notes,
     loading,
@@ -29,7 +32,7 @@ export default function Home() {
     toggleFavorite,
     toggleArchive,
   } = useNotes();
-  
+
   const {
     results,
     loading: searchLoading,
@@ -37,10 +40,7 @@ export default function Home() {
     search,
     clearSearch,
   } = useSearch();
-  
-  const [showChat, setShowChat] = useState(false);
-  const [chatNoteId, setChatNoteId] = useState<string | undefined>();
-  const [chatNoteTitle, setChatNoteTitle] = useState<string | undefined>();
+
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState<any>(null);
 
@@ -115,15 +115,13 @@ export default function Home() {
         searchInput?.focus();
       }
     },
+    // Removed Escape branch for showChat
     {
       key: 'Escape',
       action: () => {
         if (showForm) {
           setShowForm(false);
           setEditingNote(null);
-        }
-        if (showChat) {
-          setShowChat(false);
         }
       }
     }
@@ -140,40 +138,46 @@ export default function Home() {
   const handleClearSearch = () => {
     clearSearch();
   };
+  const words = ['create new notes','summarize notes with AI', 'auto-tag your notes','discuss your notes']
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        return <LoaderTwo />;
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
+      <div className="min-h-screen justify-between flex flex-col p-10 bg-primary dark:bg-gray-900">
+        <div className="">
+          <h1 className="text-9xl w-3/4 font-bold mb-4 text-gray-900 dark:text-white">
             Welcome to WZDM
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Please sign in to continue
-          </p>
-        </div>
+          <p className=" text-6xl text-sans font-black text-third"> Your Knowledge enhanced with AI</p>
+          </div>
+          
+          <div className="text-third text-7xl dark:text-gray-400 mb-4">
+            Please sign in to : 
+            <FlipWords words={words} />
+          </div>
+        
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-primary dark:bg-gray-900">
       <div className="max-w-7xl mx-auto p-6">
+        
         {/* Header with Theme Toggle */}
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               {getViewTitle()}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-third dark:text-gray-400">
               Welcome back, {session.user?.name}
             </p>
           </div>
@@ -183,17 +187,18 @@ export default function Home() {
         {/* Search Section */}
         <div className="mb-6 space-y-4">
           <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
+          <Selection/>
+         
 
-          <TagFilter
+          {isSearching && (
+            <div className="flex items-center justify-between">
+               <TagFilter
             tags={allTags}
             selectedTag={filters.tag}
             onSelectTag={handleTagFilter}
             onClearTag={handleClearSearch}
           />
-
-          {isSearching && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-third dark:text-gray-400">
                 Found {displayNotes.length} result
                 {displayNotes.length !== 1 ? "s" : ""}
                 {filters.query && ` for "${filters.query}"`}
@@ -201,7 +206,7 @@ export default function Home() {
               </p>
               <button
                 onClick={handleClearSearch}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                className="text-sm text-accents hover:bg-secondary p-2 rounded-lg transition-all dark:text-blue-400 "
               >
                 Clear filters
               </button>
@@ -211,16 +216,18 @@ export default function Home() {
 
         {/* New Note Button */}
         {view !== 'archive' && (
-          <button
+          <motion.button 
+          whileHover={{scale:1.1}}
+                whileTap={{scale:0.95}}
             onClick={() => {
               setEditingNote(null);
               setShowForm(true);
             }}
-            className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+            className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-third dark:bg-primary text-primary dark:text-accents rounded-sm transition-colors"
           >
             <PlusCircle size={20} />
             New Note
-          </button>
+          </motion.button>
         )}
 
         {/* Note Form Modal */}
@@ -290,40 +297,12 @@ export default function Home() {
                   refetch();
                   if (isSearching) search(filters);
                 }}
-                onChatAbout={() => {
-                  setChatNoteId(note.id);
-                  setChatNoteTitle(note.title);
-                  setShowChat(true);
-                }}
+                // onChatAbout removed from page-level usage; NoteCard may handle in-modal chat itself
               />
             ))}
           </div>
         )}
       </div>
-
-      {/* Floating Chat Button */}
-      {!showChat && (
-        <button
-          onClick={() => {
-            setChatNoteId(undefined);
-            setChatNoteTitle(undefined);
-            setShowChat(true);
-          }}
-          className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow z-40"
-          title="Open chat assistant"
-        >
-          <MessageSquare size={24} />
-        </button>
-      )}
-
-      {/* Chat Panel */}
-      {showChat && (
-        <ChatPanel
-          noteId={chatNoteId}
-          noteTitle={chatNoteTitle}
-          onClose={() => setShowChat(false)}
-        />
-      )}
     </div>
   );
 }

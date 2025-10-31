@@ -1,121 +1,131 @@
 "use client";
+import { AnimatePresence, motion } from "motion/react";
 
-import { Archive, MessageSquare, PlusCircle, Search, Star, Tag, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { Menu, X, User, LogOut } from "lucide-react";
+import Image from "next/image";
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  
-  const currentView = searchParams.get('view') || 'all';
-
-  const navItems = [
-    { icon: PlusCircle, label: "All Notes", view: "all" },
-    { icon: Star, label: "Favorites", view: "favorites" },
-    { icon: Archive, label: "Archive", view: "archive" },
-    { icon: Tag, label: "Tags", view: "tags" },
-  ];
-
-  const handleNavClick = (view: string) => {
-    if (view === 'all') {
-      router.push('/');
-    } else {
-      router.push(`/?view=${view}`);
-    }
-  };
+  const { data: session } = useSession();
 
   return (
-    <div
-      className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ${
-        isCollapsed ? "w-16" : "w-64"
-      }`}
+    
+    <motion.div
+      className={[
+        "bg-secondary dark:bg-gray-800",
+        "transition-[width] duration-300 ease-in-out",
+        isCollapsed ? "w-20  justify-center items-center p-2" : "w-64",
+        "overflow-hidden",
+      ].join(" ")}
     >
-      <div className="p-4 h-full flex flex-col">
+      <div className={`h-full flex w-full  flex-col items-center `}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className={`flex items-center justify-center  mb-8 ${isCollapsed?'flex-col':'flex-row p-5'}`}>
           <h2
-            className={`font-bold text-xl text-gray-900 dark:text-white transition-opacity ${
-              isCollapsed ? "opacity-0 w-0" : "opacity-100"
-            }`}
+            className={[
+              "font-bold  font-sans text-4xl  text-black dark:text-white",
+              isCollapsed ? "opacity-0 text-md select-none" : "opacity-100",
+              "transition-opacity duration-800",
+            ].join(" ")}
           >
             WZDM
           </h2>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-600 dark:text-gray-300 transition-colors"
+          <Image src="/images/logo.png" width={isCollapsed?70:50} height={isCollapsed?70:50} alt=""></Image>
+
+          {/* Single toggle that opens/closes */}
+          <motion.button
+           whileHover={{ scale: 1.1 }}
+  whileTap={{ scale: 0.95 }}
+            onClick={() => setIsCollapsed((v) => !v)}
+            className="p-1 px-3 mt-5 hover:bg-primary dark:hover:bg-gray-700 rounded-lg text-black dark:text-gray-300 transition-colors"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <Menu size={20} /> : <X size={20} />}
-          </button>
+            {isCollapsed ? <Menu size={30} /> : <X size={20} />}
+          </motion.button>
         </div>
 
-        {/* Navigation */}
-        <nav className="space-y-2 flex-1">
-          {navItems.map((item) => (
-            <NavItem
-              key={item.view}
-              icon={item.icon}
-              label={item.label}
-              isCollapsed={isCollapsed}
-              isActive={currentView === item.view}
-              onClick={() => handleNavClick(item.view)}
-            />
-          ))}
-        </nav>
+        {/* Optional: explicit open button for clarity when collapsed */}
+        
 
-        {/* Footer */}
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          {!isCollapsed && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-              v1.0.0 • Day 3
-            </div>
+        {/* Auth block */}
+        <div className="flex items-center gap-4">
+          {session ? (
+            <div className="flex items-center flex-col gap-10 min-w-0">
+              <div className="flex flex-col items-center justify-between gap-2 min-w-0">
+                {session.user?.image ? (
+                  
+                  <img
+                    src={session.user.image}
+                    alt={session.user?.name || "User"}
+                    className="w-10 h-10 bg-accents rounded-full"
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                    <User
+                      size={16}
+                      className="text-gray-600 dark:text-gray-300"
+                    />
+                  </div>
+                )}
+                {!isCollapsed && (
+                  <span className=" font-medium text-black dark:text-gray-200 truncate">
+                    {session.user?.name}
+                  </span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <motion.button
+                whileHover={{scale:1.1}}
+                whileTap={{scale:0.95}}
+                  onClick={() => signOut()}
+                  className="flex items-center gap-2 px-6 py-2 bg-primary rounded-sm text-white dark:hover:text-white  dark:hover:bg-gray-700 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </motion.button>
+              )}
+            </div> 
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => signIn("google")}
+              className={[
+                "text-accents px-4 py-2 rounded-lg transition-color flex gap-3",
+                isCollapsed
+                  ? "w-15 h-10 p-0 flex items-center justify-center "
+                  : "",
+                "bg-primary",
+              ].join(" ")}
+              title="Login with Google"
+              aria-label="Login with Google"
+            >
+              {isCollapsed ? (
+                <Image
+                  src="/images/google.png"
+                  width={25}
+                  height={25}
+                  alt="google"
+                />
+              ) : (
+                <>
+                  <p>Login with Google </p>{" "}
+                  <Image
+                    src="/images/google.png"
+                    width={25}
+                    height={25}
+                    alt="google"
+                  />
+                </>
+              )}
+            </motion.button>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function NavItem({
-  icon: Icon,
-  label,
-  isCollapsed,
-  isActive,
-  onClick,
-}: {
-  icon: any;
-  label: string;
-  isCollapsed: boolean;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
-        isActive
-          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-          : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-      }`}
-      title={isCollapsed ? label : undefined}
-    >
-      <Icon
-        size={20}
-        className={
-          isActive
-            ? "text-blue-600 dark:text-blue-400"
-            : "text-gray-600 dark:text-gray-300"
-        }
-      />
-      {!isCollapsed && (
-        <span className="font-medium transition-opacity">{label}</span>
-      )}
-      {isActive && !isCollapsed && (
-        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-      )}
-    </button>
+    </motion.div>
+    
   );
 }

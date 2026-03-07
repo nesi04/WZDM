@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions'
 import { db } from '@/lib/db'
 import { getModel } from '@/lib/gemini'
 import { withLimit } from '@/lib/with-limits'
+import { retrieveTopChunks } from '@/lib/retrieval'
 
 // Helper: Truncate content safely
 function truncateContent(text: string, maxChars = 4000): string {
@@ -36,6 +37,7 @@ export const POST = withLimit(async (req: NextRequest) => {
 
     // Build context from note if provided
     let context = ''
+    let citations: Array<{ id: string; quote: string }> = []
     if (noteId) {
       const note = await db.note.findFirst({ 
         where: { id: noteId, userId: user.id },
@@ -45,14 +47,20 @@ export const POST = withLimit(async (req: NextRequest) => {
       if (note) {
         const tags = note.noteTags.map(nt => nt.tag.name).join(', ')
         const noteContext = `${note.title}\n\n${note.content ?? ''}`
+        const topChunks = retrieveTopChunks(noteContext, message, 3)
+        citations = topChunks.map((c) => ({
+          id: c.id,
+          quote: c.text.slice(0, 220),
+        }))
+        const chunkContext = topChunks.map((c) => `[${c.id}] ${c.text}`).join('\n\n')
         context = `You are a helpful assistant with access to the user's note.
 
 Note Title: ${note.title}
 Tags: ${tags || 'none'}
 Summary: ${note.summary || 'No summary available'}
 
-Note Content (truncated if long):
-${truncateContent(noteContext, 3000)}
+Relevant Note Excerpts:
+${truncateContent(chunkContext || noteContext, 3000)}
 
 ---
 `
@@ -70,7 +78,7 @@ ${truncateContent(noteContext, 3000)}
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         result = await model.generateContent(
-          `${context}User Question: ${message.trim()}\n\nProvide a helpful, concise response:`
+          `${context}User Question: ${message.trim()}\n\nRespond concisely. If evidence exists in excerpts, cite source ids like [c1], [c2].`
         )
         break
       } catch (err: any) {
@@ -91,6 +99,7 @@ ${truncateContent(noteContext, 3000)}
     return NextResponse.json({ 
       answer,
       noteId: noteId || null,
+      citations,
       timestamp: new Date().toISOString()
     })
   } catch (err: any) {

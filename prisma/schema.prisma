@@ -28,6 +28,8 @@ model User {
 
   notes Note[]
   tags Tag[]
+  flashcards Flashcard[]
+  flashcardReviews FlashcardReview[]
 
   @@map("users")
 }
@@ -47,6 +49,7 @@ model Note{
 
   user User  @relation(fields: [userId],references: [id],onDelete: Cascade)
   noteTags NoteTag[]
+  flashcards Flashcard[]
 
   @@index([userId,createdAt])
   @@index([userId,isArchived])
@@ -55,6 +58,48 @@ model Note{
 
   @@map("notes")
 
+}
+
+model Flashcard {
+  id String @id @default(cuid())
+  noteId String
+  userId String
+  question String @db.Text
+  answer String @db.Text
+  easeFactor Float @default(2.5)
+  interval Int @default(1)
+  repetitions Int @default(0)
+  dueAt DateTime @default(now())
+  lastReviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews FlashcardReview[]
+
+  @@index([userId, dueAt])
+  @@index([noteId])
+  @@map("flashcards")
+}
+
+model FlashcardReview {
+  id String @id @default(cuid())
+  flashcardId String
+  userId String
+  quality Int
+  reviewedAt DateTime @default(now())
+  intervalBefore Int
+  intervalAfter Int
+  easeFactorBefore Float
+  easeFactorAfter Float
+
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([flashcardId, reviewedAt])
+  @@index([userId, reviewedAt])
+  @@map("flashcard_reviews")
 }
 model Tag {
   id String @id @default(cuid())

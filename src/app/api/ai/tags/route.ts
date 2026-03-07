@@ -5,6 +5,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/authOptions'
 import { db } from '@/lib/db'
 import { getModel } from '@/lib/gemini'
 import { withLimit } from '@/lib/with-limits'
+import { extractJsonArray } from '@/lib/ai-parse'
 
 // Helper: Smart truncation
 function truncateContent(text: string, maxChars = 5000): string {
@@ -22,7 +23,7 @@ function parseTagsResponse(response: string): string[] {
   
   try {
     // Try JSON first
-    const parsed = JSON.parse(response)
+    const parsed = JSON.parse(extractJsonArray(response) || response)
     if (Array.isArray(parsed)) {
       candidates = parsed.filter(t => typeof t === 'string')
     }

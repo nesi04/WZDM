@@ -16,7 +16,6 @@ export default function SearchBar({ onSearch, onClear, placeholder = 'Search not
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('SearchBar debounce triggered, query:', query)
       if (query.trim()) {
         onSearch(query.trim())
       } else {
@@ -41,8 +40,11 @@ export default function SearchBar({ onSearch, onClear, placeholder = 'Search not
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-2 border border-third dark:border-gray-700 bg-accents dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 focus:border-transparent transition-colors"
+          className="w-full pl-10 pr-24 py-3 border border-white/40 dark:border-gray-700 bg-white/85 dark:bg-gray-800/90 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary dark:focus:ring-blue-600 focus:border-transparent"
         />
+        <span className="absolute right-10 top-1/2 -translate-y-1/2 rounded-md bg-secondary/20 px-2 py-1 text-[10px] font-semibold text-gray-700 dark:text-gray-300">
+          Ctrl/Cmd + K
+        </span>
         {query && (
           <button
             onClick={handleClear}

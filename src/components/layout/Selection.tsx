@@ -1,8 +1,8 @@
 "use client";
 
-import { Archive, PlusCircle, Star, Tag } from "lucide-react";
+import { Archive, PlusCircle, Star } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import {motion, scale} from 'motion/react'
+import {motion} from 'motion/react'
 
 export default function Selection() {
   const router = useRouter();
@@ -30,11 +30,9 @@ export default function Selection() {
   };
 
   return (
-    <div className=" ">
-      
-
+    <div>
       <nav
-        className="px-2 pb-2 flex gap-2 overflow-x-auto overflow-y-hidden"
+        className="p-1 rounded-xl bg-white/70 dark:bg-gray-800/70 border border-white/40 dark:border-gray-700 flex gap-2 overflow-x-auto overflow-y-hidden"
         aria-label="Notes filters"
       >
         {navItems.map((item) => {
@@ -42,15 +40,15 @@ export default function Selection() {
           const isActive = currentView === item.view;
           return (
             <motion.button
-            whileHover={{scale:1.1,backgroundColor:"rgb(79, 149, 157)"}}
+            whileHover={{scale:1.03}}
             whileTap={{scale:0.95}}
               key={item.view}
               onClick={() => handleNavClick(item.view)}
               className={[
-                "shrink-0 inline-flex items-center gap-2 px-3 py-1  text-sm transition-colors",
+                "shrink-0 inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-colors",
                 isActive
-                  ? "bg-secondary text-white"
-                  : "bg-third dark:bg-gray-700 ",
+                  ? "bg-primary text-white"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-white/80 dark:hover:bg-gray-700",
               ].join(" ")}
               aria-current={isActive ? "page" : undefined}
               title={item.label}

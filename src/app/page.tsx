@@ -1,21 +1,24 @@
 
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useNotes } from "@/hooks/useNotes";
 import { useSearch } from "@/hooks/useSearch";
 import NoteCard from "@/components/notes/NoteCard";
 import NoteForm from "@/components/notes/NoteForm";
+import ImportTextModal from "@/components/notes/ImportTextModal";
 import SearchBar from "@/components/search/SearchBar";
 import TagFilter from "@/components/search/TagFilter";
-import { PlusCircle } from "lucide-react";
+import { Brain, NotebookPen, PlusCircle, Search, Sparkles } from "lucide-react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import Selection from "@/components/layout/Selection";
 import { LoaderTwo } from "@/components/ui/loader";
 import { FlipWords } from "@/components/ui/flip-words";
+import StudySessionModal from "@/components/study/StudySessionModal";
+import Image from "next/image";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -43,6 +46,9 @@ export default function Home() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState<any>(null);
+  const [showStudy, setShowStudy] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [studyStats, setStudyStats] = useState({ dueCount: 0, newCount: 0 });
 
   // Extract all unique tags from notes
   const allTags = Array.from(
@@ -89,6 +95,24 @@ export default function Home() {
       refetch();
     }
   }, [status, refetch]);
+
+  useEffect(() => {
+    const loadStudyStats = async () => {
+      if (status !== "authenticated") return;
+      try {
+        const res = await fetch("/api/study/session?limit=1");
+        if (!res.ok) return;
+        const data = await res.json();
+        setStudyStats({
+          dueCount: data?.stats?.dueCount ?? 0,
+          newCount: data?.stats?.newCount ?? 0,
+        });
+      } catch {
+        setStudyStats({ dueCount: 0, newCount: 0 });
+      }
+    };
+    loadStudyStats();
+  }, [status, notes.length]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -143,62 +167,153 @@ export default function Home() {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        return <LoaderTwo />;
+        <LoaderTwo />
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen justify-between flex flex-col p-10 bg-primary dark:bg-gray-900">
-        <div className="">
-          <h1 className="text-9xl w-3/4 font-bold mb-4 text-gray-900 dark:text-white">
-            Welcome to WZDM
-          </h1>
-          <p className=" text-6xl text-sans font-black text-third"> Your Knowledge enhanced with AI</p>
+      <div className="relative min-h-screen bg-primary dark:bg-gray-900 overflow-hidden p-6 md:p-10">
+        <div className="pointer-events-none absolute -top-32 -right-16 h-96 w-96 rounded-full bg-third/40 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-secondary/40 blur-3xl" />
+        <div className="relative max-w-6xl mx-auto min-h-[85vh] grid lg:grid-cols-2 gap-8 items-center">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs text-white/90">
+              Student Workspace
+            </p>
+            <h1 className="mt-4 text-5xl md:text-7xl font-bold leading-tight text-white">
+              Study Smarter. Revise Faster.
+            </h1>
+            <p className="mt-4 text-lg text-white/80 max-w-xl">
+              WZDM helps you turn class notes into summaries, flashcards, quizzes, and AI discussions.
+            </p>
+            <div className="mt-6 text-third text-xl md:text-2xl">
+              Sign in to <FlipWords words={words} />
+            </div>
+            <button
+              onClick={() => signIn("google")}
+              className="mt-8 inline-flex items-center gap-3 rounded-xl bg-white px-5 py-3 font-semibold text-gray-900 hover:bg-gray-100"
+            >
+              <Image src="/images/google.png" alt="google" width={20} height={20} />
+              Continue with Google
+            </button>
           </div>
-          
-          <div className="text-third text-7xl dark:text-gray-400 mb-4">
-            Please sign in to : 
-            <FlipWords words={words} />
+
+          <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-xl p-6 md:p-8 text-white">
+            <h2 className="text-2xl font-semibold">What you can do</h2>
+            <ul className="mt-4 space-y-3 text-white/85 text-sm md:text-base">
+              <li>- Write and organize notes by tags, favorites, archive</li>
+              <li>- Ask AI about any note with grounded context</li>
+              <li>- Auto-generate tags and concise summaries</li>
+              <li>- Create flashcards and run spaced-repetition sessions</li>
+              <li>- Generate quiz questions before exams</li>
+            </ul>
           </div>
-        
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-primary dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto p-6">
+    <div className="relative min-h-screen bg-primary dark:bg-gray-900 overflow-hidden">
+      <div className="pointer-events-none absolute -top-40 -right-20 h-[28rem] w-[28rem] rounded-full bg-third/35 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -left-20 h-[30rem] w-[30rem] rounded-full bg-secondary/30 blur-3xl" />
+      <div className="relative max-w-7xl mx-auto p-4 md:p-6">
         
         {/* Header with Theme Toggle */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-6 rounded-2xl border border-white/25 bg-white/10 dark:bg-gray-800/35 backdrop-blur-xl p-4 md:p-5 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-1">
               {getViewTitle()}
             </h1>
-            <p className="text-third dark:text-gray-400">
+            <p className="text-white/80">
               Welcome back, {session.user?.name}
             </p>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-3 py-2 text-sm rounded-lg bg-white/85 text-primary hover:bg-white"
+            >
+              Import Text
+            </button>
+            <button
+              onClick={() => setShowStudy(true)}
+              className="px-3 py-2 text-sm rounded-lg bg-secondary text-white hover:opacity-90"
+            >
+              Study Session
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
 
+        <section className="mb-6 rounded-2xl border border-white/30 bg-gradient-to-r from-secondary/85 to-third/85 dark:from-gray-800 dark:to-gray-700 p-5 shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <button
+              onClick={() => {
+                setEditingNote(null);
+                setShowForm(true);
+              }}
+              className="rounded-xl bg-white/80 dark:bg-gray-900/60 p-4 text-left hover:bg-white dark:hover:bg-gray-900 transition"
+            >
+              <p className="text-xs text-gray-600 dark:text-gray-300">Quick Action</p>
+              <div className="mt-1 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <PlusCircle size={16} />
+                New Note
+              </div>
+            </button>
+            <button
+              onClick={() => setShowStudy(true)}
+              className="rounded-xl bg-white/80 dark:bg-gray-900/60 p-4 text-left hover:bg-white dark:hover:bg-gray-900 transition"
+            >
+              <p className="text-xs text-gray-600 dark:text-gray-300">Study Queue</p>
+              <div className="mt-1 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <Brain size={16} />
+                {studyStats.dueCount} Due, {studyStats.newCount} New
+              </div>
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className="rounded-xl bg-white/80 dark:bg-gray-900/60 p-4 text-left hover:bg-white dark:hover:bg-gray-900 transition"
+            >
+              <p className="text-xs text-gray-600 dark:text-gray-300">Import</p>
+              <div className="mt-1 flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <NotebookPen size={16} />
+                Paste Lecture Text
+              </div>
+            </button>
+            <div className="rounded-xl bg-white/80 dark:bg-gray-900/60 p-4">
+              <p className="text-xs text-gray-600 dark:text-gray-300">Notes</p>
+              <div className="mt-1 text-gray-900 dark:text-white font-semibold">
+                {notes.filter((n) => !n.isArchived).length} Active
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                {notes.filter((n) => n.isFavorite && !n.isArchived).length} Favorites
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-700 dark:text-gray-200">
+            <span className="inline-flex items-center gap-1"><Search size={12} /> Quick Search: `Cmd/Ctrl + K`</span>
+            <span className="inline-flex items-center gap-1"><Sparkles size={12} /> AI Actions are on each note card</span>
+          </div>
+        </section>
+
         {/* Search Section */}
-        <div className="mb-6 space-y-4">
+        <div className="mb-6 space-y-4 rounded-2xl border border-white/30 bg-white/20 dark:bg-gray-800/30 backdrop-blur-md p-4">
           <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
           <Selection/>
          
 
           {isSearching && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
                <TagFilter
             tags={allTags}
             selectedTag={filters.tag}
             onSelectTag={handleTagFilter}
             onClearTag={handleClearSearch}
           />
-              <p className="text-sm text-third dark:text-gray-400">
+              <p className="text-sm text-white/90">
                 Found {displayNotes.length} result
                 {displayNotes.length !== 1 ? "s" : ""}
                 {filters.query && ` for "${filters.query}"`}
@@ -206,7 +321,7 @@ export default function Home() {
               </p>
               <button
                 onClick={handleClearSearch}
-                className="text-sm text-accents hover:bg-secondary p-2 rounded-lg transition-all dark:text-blue-400 "
+                className="text-sm text-white hover:bg-white/20 p-2 rounded-lg transition-all"
               >
                 Clear filters
               </button>
@@ -216,14 +331,14 @@ export default function Home() {
 
         {/* New Note Button */}
         {view !== 'archive' && (
-          <motion.button 
+          <motion.button
           whileHover={{scale:1.1}}
                 whileTap={{scale:0.95}}
             onClick={() => {
               setEditingNote(null);
               setShowForm(true);
             }}
-            className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-third dark:bg-primary text-primary dark:text-accents rounded-sm transition-colors"
+            className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-lg shadow hover:shadow-md transition"
           >
             <PlusCircle size={20} />
             New Note
@@ -257,12 +372,12 @@ export default function Home() {
 
         {/* Notes Grid */}
         {loading || searchLoading ? (
-          <div className="text-center py-12">
-            <div className="text-gray-600 dark:text-gray-400">Loading notes...</div>
+          <div className="text-center py-12 rounded-2xl border border-white/30 bg-white/20 dark:bg-gray-800/30 backdrop-blur-md">
+            <div className="text-white/90">Loading notes...</div>
           </div>
         ) : displayNotes.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
+          <div className="text-center py-12 rounded-2xl border border-white/30 bg-white/20 dark:bg-gray-800/30 backdrop-blur-md">
+            <p className="text-white/90">
               {isSearching
                 ? "No notes found matching your search"
                 : view === 'favorites'
@@ -303,6 +418,12 @@ export default function Home() {
           </div>
         )}
       </div>
+      <StudySessionModal open={showStudy} onClose={() => setShowStudy(false)} />
+      <ImportTextModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={() => refetch()}
+      />
     </div>
   );
 }

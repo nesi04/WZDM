@@ -20,12 +20,9 @@ export function useSearch() {
 const search = async (customFilters?: Partial<SearchFilters>) => {
   const activeFilters = { ...filters, ...customFilters }
   setFilters(activeFilters)
-  
-  console.log('Search called with filters:', activeFilters) // Add this
-  
+
   // Don't search if no filters active
   if (!activeFilters.query && !activeFilters.tag) {
-    console.log('No filters, clearing results') // Add this
     setResults([])
     return
   }
@@ -38,13 +35,11 @@ const search = async (customFilters?: Partial<SearchFilters>) => {
     if (activeFilters.archived) params.set('archived', 'true')
 
     const url = `/api/search?${params}`
-    console.log('Fetching:', url) // Add this
 
     const res = await fetch(url)
     if (!res.ok) throw new Error('Search failed')
     
     const data = await res.json()
-    console.log('Search results:', data) // Add this
     setResults(data.notes)
   } catch (error) {
     console.error('Search error:', error)

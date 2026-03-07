@@ -206,4 +206,9 @@
   * {
     @apply border-border outline-ring/50;}
   body {
-    @apply bg-background text-foreground;}}
+    @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(152, 210, 192, 0.28), transparent 28%),
+      radial-gradient(circle at 88% 22%, rgba(79, 149, 157, 0.2), transparent 26%);
+    background-attachment: fixed;
+  }}

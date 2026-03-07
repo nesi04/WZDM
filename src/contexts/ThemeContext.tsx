@@ -39,12 +39,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Save to localStorage
     localStorage.setItem('theme', theme)
     
-    // FORCE browser to repaint
-    root.style.display = 'none'
-    root.offsetHeight // Trigger reflow
-    root.style.display = ''
-    
-    console.log('Applied theme:', theme, 'Classes:', root.className)
   }, [theme, mounted])
 
   const toggleTheme = () => {

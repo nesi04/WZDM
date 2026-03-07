@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Manrope } from 'next/font/google'
 import './globals.css'
 import Sidebar from '@/components/layout/Sidebar'
-import Header from '@/components/layout/Header'
 import SessionProvider from '@/components/providers/SessionProvider'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 
-const inter = Inter({ subsets: ['latin'] })
+const manrope = Manrope({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'WZDM',
@@ -20,13 +19,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={manrope.className}>
         <SessionProvider>
           <ThemeProvider>
           <div className="flex h-screen bg-primary">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
-              
               <main className="flex-1 overflow-auto">
                 {children}
               </main>

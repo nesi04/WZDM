@@ -1,8 +1,8 @@
 // src/components/notes/NoteCard.tsx
 "use client";
 
-import { Star, Archive, Edit, Trash2, Tag, Sparkles, Tags, MessageSquare, ExternalLink, X } from 'lucide-react';
-import { useState } from 'react';
+import { Star, Archive, Edit, Trash2, Tag, Sparkles, Tags, MessageSquare, ExternalLink, X, Brain, GraduationCap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Modal from '@/components/ui/Modal';
@@ -45,6 +45,13 @@ export default function NoteCard({
   const [autoTagging, setAutoTagging] = useState(false);
   const [tags, setTags] = useState(initialTags);
   const [open, setOpen] = useState(false);
+  const [creatingFlashcards, setCreatingFlashcards] = useState(false);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [quizPreview, setQuizPreview] = useState<Array<{ question: string; answer: string }>>([]);
+  const [showQuizPreview, setShowQuizPreview] = useState(false);
+  const [relatedNotes, setRelatedNotes] = useState<Array<{ id: string; title: string; tags: string[] }>>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
   // New: in-modal chat toggle
   const [showChat, setShowChat] = useState(false);
@@ -64,9 +71,10 @@ export default function NoteCard({
       const data = await res.json();
       setSummary(data.summary);
       setShowSummary(true);
+      setAiFeedback('Summary updated.');
     } catch (err: any) {
       console.error('Summarization error:', err);
-      alert(err.message || 'Failed to generate summary');
+      setAiFeedback(err.message || 'Failed to generate summary');
     } finally {
       setSummarizing(false);
     }
@@ -89,16 +97,83 @@ export default function NoteCard({
       const mergedTags = Array.from(new Set([...tags, ...newTagNames]));
       setTags(mergedTags);
       onTagsUpdated?.(mergedTags);
+      setAiFeedback(`Added ${newTagNames.length} AI tag${newTagNames.length === 1 ? '' : 's'}.`);
     } catch (err: any) {
       console.error('Auto-tag error:', err);
-      alert(err.message || 'Failed to generate tags');
+      setAiFeedback(err.message || 'Failed to generate tags');
     } finally {
       setAutoTagging(false);
     }
   };
 
+  const handleCreateFlashcards = async () => {
+    setCreatingFlashcards(true);
+    try {
+      const res = await fetch('/api/ai/flashcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noteId: id, count: 8 }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate flashcards');
+      }
+      const data = await res.json();
+      setAiFeedback(`Created ${data.flashcards?.length || 0} flashcards.`);
+    } catch (err: any) {
+      console.error('Flashcard generation error:', err);
+      setAiFeedback(err.message || 'Failed to generate flashcards');
+    } finally {
+      setCreatingFlashcards(false);
+    }
+  };
+
+  const handleGenerateQuiz = async () => {
+    setGeneratingQuiz(true);
+    try {
+      const res = await fetch('/api/study/session/quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noteId: id, questionCount: 5 }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate quiz');
+      }
+      const data = await res.json();
+      const qs = (data.questions || []) as Array<{ question: string; answer: string }>;
+      setQuizPreview(qs);
+      setShowQuizPreview(true);
+      setAiFeedback(`Quiz generated (${qs.length} questions).`);
+    } catch (err: any) {
+      console.error('Quiz generation error:', err);
+      setAiFeedback(err.message || 'Failed to generate quiz');
+    } finally {
+      setGeneratingQuiz(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadRelated = async () => {
+      if (!open) return;
+      setLoadingRelated(true);
+      try {
+        const res = await fetch(`/api/notes/related?noteId=${id}`);
+        if (!res.ok) throw new Error('Failed to load related notes');
+        const data = await res.json();
+        setRelatedNotes(Array.isArray(data.related) ? data.related : []);
+      } catch (err) {
+        console.error(err);
+        setRelatedNotes([]);
+      } finally {
+        setLoadingRelated(false);
+      }
+    };
+    loadRelated();
+  }, [open, id]);
+
   return (
-    <div className="bg-third dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow group">
+    <div className="bg-white/90 dark:bg-gray-800/90 rounded-2xl shadow-sm border border-white/40 dark:border-gray-700 p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all group">
       <div className="flex items-start justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 mr-2">
           {title}
@@ -176,7 +251,36 @@ export default function NoteCard({
           <MessageSquare size={14} />
           Chat About This
         </button>
+
+        <button
+          onClick={handleCreateFlashcards}
+          disabled={creatingFlashcards}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Generate flashcards"
+        >
+          <Brain size={14} className={creatingFlashcards ? 'animate-pulse' : ''} />
+          {creatingFlashcards ? 'Building Cards...' : 'Flashcards'}
+        </button>
+
+        <button
+          onClick={handleGenerateQuiz}
+          disabled={generatingQuiz}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Generate quiz"
+        >
+          <GraduationCap size={14} className={generatingQuiz ? 'animate-pulse' : ''} />
+          {generatingQuiz ? 'Generating Quiz...' : 'Quiz'}
+        </button>
       </div>
+
+      {aiFeedback && (
+        <div className="mb-3 rounded-md bg-white/70 dark:bg-gray-900/70 border border-secondary dark:border-gray-700 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 flex items-center justify-between">
+          <span>{aiFeedback}</span>
+          <button onClick={() => setAiFeedback(null)} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-200">
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Footer: tags and date */}
       <div className="flex items-center justify-between">
@@ -259,6 +363,24 @@ export default function NoteCard({
             <Sparkles size={14} className={summarizing ? 'animate-spin' : ''} />
             {summarizing ? 'Summarizing...' : summary ? 'Regenerate Summary' : 'Summarize'}
           </button>
+
+          <button
+            onClick={handleCreateFlashcards}
+            disabled={creatingFlashcards}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded-md disabled:opacity-50"
+          >
+            <Brain size={14} className={creatingFlashcards ? 'animate-pulse' : ''} />
+            {creatingFlashcards ? 'Building...' : 'Generate Flashcards'}
+          </button>
+
+          <button
+            onClick={handleGenerateQuiz}
+            disabled={generatingQuiz}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 hover:bg-teal-100 dark:hover:bg-teal-900/50 rounded-md disabled:opacity-50"
+          >
+            <GraduationCap size={14} className={generatingQuiz ? 'animate-pulse' : ''} />
+            {generatingQuiz ? 'Generating...' : 'Generate Quiz'}
+          </button>
         </div>
 
         {/* Split layout: note on left, chat on right */}
@@ -297,6 +419,26 @@ export default function NoteCard({
               </div>
               <span className="text-xs text-gray-500 dark:text-gray-400">{createdAt}</span>
             </div>
+
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Related Notes</h4>
+              {loadingRelated ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400">Loading related notes...</p>
+              ) : relatedNotes.length === 0 ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400">No related notes found yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {relatedNotes.map((r) => (
+                    <span
+                      key={r.id}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
+                    >
+                      {r.title}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: in-panel chat */}
@@ -316,8 +458,24 @@ export default function NoteCard({
                 noteId={id}
                 noteTitle={title}
                 onClose={() => setShowChat(false)}
+                embedded
               />
             </aside>
+          )}
+        </div>
+      </Modal>
+
+      <Modal open={showQuizPreview} onClose={() => setShowQuizPreview(false)} title={`Quiz: ${title}`}>
+        <div className="space-y-4">
+          {quizPreview.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">No quiz questions generated.</p>
+          ) : (
+            quizPreview.map((q, idx) => (
+              <div key={`${idx}-${q.question}`} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{idx + 1}. {q.question}</p>
+                <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{q.answer}</p>
+              </div>
+            ))
           )}
         </div>
       </Modal>

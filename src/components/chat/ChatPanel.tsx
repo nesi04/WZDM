@@ -8,15 +8,17 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: string
+  citations?: Array<{ id: string; quote: string }>
 }
 
 interface ChatPanelProps {
   noteId?: string
   noteTitle?: string
   onClose: () => void
+  embedded?: boolean
 }
 
-export default function ChatPanel({ noteId, noteTitle, onClose }: ChatPanelProps) {
+export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -60,7 +62,8 @@ export default function ChatPanel({ noteId, noteTitle, onClose }: ChatPanelProps
       const assistantMsg: Message = {
         role: 'assistant',
         content: data.answer,
-        timestamp: data.timestamp
+        timestamp: data.timestamp,
+        citations: Array.isArray(data.citations) ? data.citations : []
       }
       setMessages(prev => [...prev, assistantMsg])
     } catch (err: any) {
@@ -84,7 +87,13 @@ export default function ChatPanel({ noteId, noteTitle, onClose }: ChatPanelProps
   }
 
   return (
-    <div className="fixed bottom-0 right-0 w-96 h-[600px] bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col z-50">
+    <div
+      className={
+        embedded
+          ? "w-full h-[540px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col"
+          : "fixed bottom-0 right-0 w-96 h-[600px] bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col z-50"
+      }
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="flex items-center gap-2 text-white">
@@ -128,6 +137,15 @@ export default function ChatPanel({ noteId, noteTitle, onClose }: ChatPanelProps
               }`}
             >
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+              {msg.role === 'assistant' && msg.citations && msg.citations.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {msg.citations.map((c) => (
+                    <p key={c.id} className="text-xs text-gray-500 dark:text-gray-400">
+                      [{c.id}] {c.quote}
+                    </p>
+                  ))}
+                </div>
+              )}
               <p className={`text-xs mt-1 ${
                 msg.role === 'user' 
                   ? 'text-blue-100 dark:text-blue-200' 

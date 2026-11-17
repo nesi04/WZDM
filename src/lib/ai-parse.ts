@@ -40,7 +40,7 @@ export function parseTagsResponse(response: string): string[] {
   }
 
   return candidates
-    .map((t) => t.replace(/^["'\-\*\d\.\[\]{}:]+|["'\[\]{}:]+$/g, '').trim())
+    .map((t) => t.replace(/^["'\-\*\d\.\[\]{}:\s]+|["'\[\]{}:\s]+$/g, '').trim())
     .filter((t) => {
       if (!t || t.length > 30) return false
       if (/^[\[\]{}",:\s]+$/.test(t)) return false

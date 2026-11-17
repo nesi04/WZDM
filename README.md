@@ -1,4 +1,4 @@
-﻿# WZDM - AI Study Notes and Revision Workspace
+# WZDM - AI Study Notes and Revision Workspace
 
 WZDM is a personal knowledge app for studying with AI.
 
@@ -109,6 +109,25 @@ npx prisma generate
 npm run dev
 ```
 
+### Applying new migrations
+
+After pulling, apply any new migrations (e.g. `add_note_source_url`):
+
+```bash
+npx prisma migrate deploy   # production / shared DBs
+npx prisma migrate dev      # local dev DB
+```
+
+## Tests and checks
+
+```bash
+npm test           # Vitest unit tests (src/**/*.test.ts)
+npm run typecheck  # tsc --noEmit
+npm run lint
+```
+
+`next build` now fails on type or lint errors.
+
 ## Production Build
 
 ```bash
@@ -151,11 +170,14 @@ npm run start
 - `POST /api/flashcards/[id]/review` with `{ quality: 0..5 }`
 
 ### Import
-- `POST /api/import/text` with `{ title, content, sourceUrl?, tags? }`
+- `POST /api/import/text` with `{ title, content, sourceUrl?, tags? }` (`sourceUrl` is stored on the note)
+
+All JSON request bodies are validated with Zod (`src/lib/validation.ts`); invalid input returns `400`.
 
 ## Current Rate Limiting
 
-AI endpoints are wrapped by an in-memory limiter (`src/lib/rate-limit.ts`).
+AI endpoints are wrapped by `withLimit` (`src/lib/with-limits.ts`), which requires a signed-in
+user and applies a per-user token bucket (`src/lib/rate-limit.ts`).
 
 Important production note:
 - This limiter is per-instance and resets on deploy/restart.
@@ -191,6 +213,5 @@ Important production note:
 - Better semantic retrieval for citations (embedding-based)
 - Rich importers (PDF/URL transcription pipeline)
 - Graph visualization for note relationships
-- Zod validation on all API routes
 - Redis-backed rate limiting
 

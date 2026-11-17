@@ -2,7 +2,7 @@
 'use client'
 
 import { Search, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface SearchBarProps {
   onSearch: (query: string) => void
@@ -12,14 +12,19 @@ interface SearchBarProps {
 
 export default function SearchBar({ onSearch, onClear, placeholder = 'Search notes...' }: SearchBarProps) {
   const [query, setQuery] = useState('')
+  const callbacks = useRef({ onSearch, onClear })
+
+  useEffect(() => {
+    callbacks.current = { onSearch, onClear }
+  }, [onSearch, onClear])
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.trim()) {
-        onSearch(query.trim())
+        callbacks.current.onSearch(query.trim())
       } else {
-        onClear()
+        callbacks.current.onClear()
       }
     }, 300)
 
@@ -34,21 +39,25 @@ export default function SearchBar({ onSearch, onClear, placeholder = 'Search not
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
+        <Search className="app-notes-muted pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" size={18} aria-hidden="true" />
+        <label htmlFor="notes-search" className="sr-only">Search notes</label>
         <input
+          id="notes-search"
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-24 py-3 border border-white/40 dark:border-gray-700 bg-white/85 dark:bg-gray-800/90 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary dark:focus:ring-blue-600 focus:border-transparent"
+          className="app-notes-control h-11 w-full pl-10 pr-28 text-sm"
         />
-        <span className="absolute right-10 top-1/2 -translate-y-1/2 rounded-md bg-secondary/20 px-2 py-1 text-[10px] font-semibold text-gray-700 dark:text-gray-300">
+        <span className="app-notes-muted absolute right-10 top-1/2 hidden -translate-y-1/2 rounded border border-[var(--wzdm-border)] px-2 py-1 text-[10px] font-medium sm:block">
           Ctrl/Cmd + K
         </span>
         {query && (
           <button
+            type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            aria-label="Clear search"
+            className="app-notes-muted absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded hover:bg-[var(--wzdm-subtle)]"
           >
             <X size={18} />
           </button>

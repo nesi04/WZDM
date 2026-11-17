@@ -22,10 +22,10 @@ export default function RootLayout({
       <body className={manrope.className}>
         <SessionProvider>
           <ThemeProvider>
-          <div className="flex h-screen bg-primary">
+          <div className="min-h-dvh bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 md:flex">
             <Sidebar />
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <main className="flex-1 overflow-auto">
+            <div className="flex min-h-dvh min-w-0 flex-1 flex-col md:h-dvh md:overflow-hidden">
+              <main className="min-h-0 flex-1 md:overflow-auto">
                 {children}
               </main>
             </div>

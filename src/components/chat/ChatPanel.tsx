@@ -16,9 +16,10 @@ interface ChatPanelProps {
   noteTitle?: string
   onClose: () => void
   embedded?: boolean
+  starterPrompts?: string[]
 }
 
-export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false }: ChatPanelProps) {
+export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false, starterPrompts = [] }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -32,8 +33,7 @@ export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false
     scrollToBottom()
   }, [messages])
 
-  const handleSend = async () => {
-    const userMessage = input.trim()
+  const sendMessage = async (userMessage: string) => {
     if (!userMessage || loading) return
 
     // Add user message
@@ -66,17 +66,21 @@ export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false
         citations: Array.isArray(data.citations) ? data.citations : []
       }
       setMessages(prev => [...prev, assistantMsg])
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Chat error:', err)
       const errorMsg: Message = {
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${err.message}`,
+        content: 'Sorry, I couldn\'t get a response. Please try again.',
         timestamp: new Date().toISOString()
       }
       setMessages(prev => [...prev, errorMsg])
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSend = () => {
+    void sendMessage(input.trim())
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -90,37 +94,54 @@ export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false
     <div
       className={
         embedded
-          ? "w-full h-[540px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col"
-          : "fixed bottom-0 right-0 w-96 h-[600px] bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 shadow-2xl flex flex-col z-50"
+          ? "app-notes-surface flex h-[540px] w-full flex-col"
+            : "fixed bottom-0 right-0 z-50 flex h-[600px] w-96 flex-col border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900"
       }
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="flex items-center gap-2 text-white">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex items-center gap-2 text-gray-900 dark:text-gray-100">
           <MessageSquare size={20} />
           <div>
-            <h3 className="font-semibold">Chat Assistant</h3>
-            {noteTitle && <p className="text-xs opacity-90">About: {noteTitle}</p>}
+              <h3 className="font-semibold">Ask WZDM</h3>
+              {noteTitle && <p className="app-notes-muted text-xs">About: {noteTitle}</p>}
           </div>
         </div>
         <button
+            type="button"
           onClick={onClose}
-          className="text-white hover:bg-white/20 rounded p-1 transition-colors"
+            aria-label="Close chat"
+            className="app-notes-muted rounded p-1 hover:bg-gray-200 focus-visible:outline dark:hover:bg-gray-700"
         >
-          <X size={20} />
+            <X size={20} aria-hidden="true" />
         </button>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
         {messages.length === 0 && (
-          <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
-            <MessageSquare size={48} className="mx-auto mb-2 opacity-50" />
+          <div className="mt-8 text-center text-gray-500 dark:text-gray-400">
+            <MessageSquare size={32} className="mx-auto mb-2 opacity-60" aria-hidden="true" />
             <p className="text-sm">
               {noteTitle 
                 ? `Ask me anything about "${noteTitle}"`
                 : 'Ask me anything about your notes'}
             </p>
+            {starterPrompts.length > 0 && (
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {starterPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => { void sendMessage(prompt); }}
+                    className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -176,12 +197,15 @@ export default function ChatPanel({ noteId, noteTitle, onClose, embedded = false
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type your message... (Enter to send)"
+            aria-label="Ask WZDM about this note"
             rows={2}
             className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 resize-none text-sm"
             disabled={loading}
           />
           <button
+            type="button"
             onClick={handleSend}
+            aria-label="Send message"
             disabled={!input.trim() || loading}
             className="px-4 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >

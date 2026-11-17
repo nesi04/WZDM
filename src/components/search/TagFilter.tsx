@@ -1,8 +1,6 @@
 // components/search/TagFilter.tsx
 'use client'
 
-import { Tag, X } from 'lucide-react'
-
 interface TagFilterProps {
   tags: string[]
   selectedTag: string
@@ -11,31 +9,20 @@ interface TagFilterProps {
 }
 
 export default function TagFilter({ tags, selectedTag, onSelectTag, onClearTag }: TagFilterProps) {
-  if (tags.length === 0) return null
-
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Tag size={16} className="text-third dark:text-gray-400" />
-        <span className="text-sm font-medium text-third dark:text-gray-300">Filter by tag:</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <button
-            key={tag}
-            onClick={() => selectedTag === tag ? onClearTag() : onSelectTag(tag)}
-            className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-full transition-colors ${
-              selectedTag === tag
-                ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:bg-secondary dark:hover:bg-blue-900/50'
-            }`}
-          >
-            <Tag size={10} />
-            {tag}
-            {selectedTag === tag && <X size={12} />}
-          </button>
-        ))}
-      </div>
+    <div className="flex min-w-0 items-center gap-2">
+      <label htmlFor="notes-subject-filter" className="app-notes-muted shrink-0 text-sm">
+        Subject
+      </label>
+      <select
+        id="notes-subject-filter"
+        value={selectedTag}
+        onChange={(event) => event.target.value ? onSelectTag(event.target.value) : onClearTag()}
+        className="app-notes-control min-w-0 max-w-full px-3 py-2 text-sm"
+      >
+        <option value="">All subjects</option>
+        {tags.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+      </select>
     </div>
   )
 }

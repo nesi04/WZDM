@@ -1,7 +1,8 @@
 // src/components/notes/MarkdownEditor.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
+import type { MDEditorProps } from '@uiw/react-md-editor'
 import { Eye, Edit3, Code } from 'lucide-react'
 
 interface MarkdownEditorProps {
@@ -17,7 +18,7 @@ export default function MarkdownEditor({
 }: MarkdownEditorProps) {
   const [mode, setMode] = useState<'edit' | 'preview' | 'live'>('edit')
   const [mounted, setMounted] = useState(false)
-  const [MDEditor, setMDEditor] = useState<any>(null)
+  const [MDEditor, setMDEditor] = useState<ComponentType<MDEditorProps> | null>(null)
 
   useEffect(() => {
     // Dynamically import MDEditor only on client side

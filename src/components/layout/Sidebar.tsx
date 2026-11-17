@@ -130,6 +130,8 @@ export default function Sidebar() {
       )}
       <div className="flex items-center gap-3 px-2">
         {session.user?.image ? (
+          // Remote OAuth avatar; next/image would need remotePatterns config for little gain.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={session.user.image}
             alt=""

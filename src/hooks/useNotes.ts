@@ -6,7 +6,7 @@ interface Note {
   id: string
   title: string
   content: string
-  summary?: string
+  summary?: string | null
   isFavorite: boolean
   isArchived: boolean
   createdAt: string

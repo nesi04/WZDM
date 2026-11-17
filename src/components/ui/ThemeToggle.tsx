@@ -4,7 +4,7 @@
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useEffect, useState } from 'react'
-import {motion, scale} from 'motion/react'
+import { motion } from 'motion/react'
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()

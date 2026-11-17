@@ -16,9 +16,6 @@ export function useKeyboardShortcuts(shortcuts: Shortcut[]) {
     const handleKeyDown = (e: KeyboardEvent) => {
       for (const shortcut of shortcuts) {
         const keyMatch = e.key.toLowerCase() === shortcut.key.toLowerCase()
-        const ctrlMatch = shortcut.ctrlKey ? e.ctrlKey : !e.ctrlKey
-        const metaMatch = shortcut.metaKey ? e.metaKey : !e.metaKey
-        const shiftMatch = shortcut.shiftKey ? e.shiftKey : !e.shiftKey
 
         // Cmd/Ctrl + Key
         const modifierMatch = shortcut.metaKey || shortcut.ctrlKey

@@ -14,7 +14,7 @@ interface NoteCardProps {
   id: string;
   title: string;
   content: string;
-  summary?: string;
+  summary?: string | null;
   tags: string[];
   isFavorite: boolean;
   isArchived: boolean;

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthedUser } from '@/lib/server-auth'
+import { serverError } from '@/lib/validation'
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,9 +62,8 @@ export async function GET(req: NextRequest) {
         tags: n.noteTags.map((nt) => nt.tag.name),
       })),
     })
-  } catch (error: any) {
-    console.error('Related notes error:', error)
-    return NextResponse.json({ error: error?.message ?? 'Failed to fetch related notes' }, { status: 500 })
+  } catch (error) {
+    return serverError('Failed to fetch related notes', error, 'Failed to fetch related notes')
   }
 }
 

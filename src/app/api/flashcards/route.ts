@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthedUser } from '@/lib/server-auth'
+import { serverError } from '@/lib/validation'
 
 export async function GET(req: NextRequest) {
   try {
@@ -28,9 +29,8 @@ export async function GET(req: NextRequest) {
     })
 
     return NextResponse.json({ flashcards })
-  } catch (error: any) {
-    console.error('Fetch flashcards error:', error)
-    return NextResponse.json({ error: error?.message ?? 'Failed to fetch flashcards' }, { status: 500 })
+  } catch (error) {
+    return serverError('Failed to fetch flashcards', error, 'Failed to fetch flashcards')
   }
 }
 

@@ -1,7 +1,8 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthedUser } from '@/lib/server-auth'
 import { nextSrsState } from '@/lib/srs'
+import { parseBody, reviewSchema, serverError } from '@/lib/validation'
 
 type RouteCtx = { params: Promise<{ id: string }> }
 
@@ -11,11 +12,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await ctx.params
-    const { quality } = await req.json()
-    const parsedQuality = Number(quality)
-    if (!Number.isFinite(parsedQuality) || parsedQuality < 0 || parsedQuality > 5) {
-      return NextResponse.json({ error: 'quality must be a number between 0 and 5' }, { status: 400 })
-    }
+    const parsed = await parseBody(req, reviewSchema)
+    if (!parsed.ok) return parsed.response
+    const parsedQuality = parsed.data.quality
 
     const flashcard = await db.flashcard.findFirst({ where: { id, userId: user.id } })
     if (!flashcard) return NextResponse.json({ error: 'Flashcard not found' }, { status: 404 })
@@ -54,9 +53,8 @@ export async function POST(req: NextRequest, ctx: RouteCtx) {
     })
 
     return NextResponse.json({ flashcard: updated })
-  } catch (error: any) {
-    console.error('Flashcard review error:', error)
-    return NextResponse.json({ error: error?.message ?? 'Failed to review flashcard' }, { status: 500 })
+  } catch (error) {
+    return serverError('Flashcard review error', error, 'Failed to review flashcard')
   }
 }
 

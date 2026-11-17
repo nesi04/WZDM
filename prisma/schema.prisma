@@ -40,6 +40,7 @@ model Note{
   content String @db.Text
   summary String? @db.Text
   source String @default("manual")
+  sourceUrl String?
   isArchived  Boolean @default(false)
   isFavorite Boolean @default(false)
   lastAccessedAt DateTime?

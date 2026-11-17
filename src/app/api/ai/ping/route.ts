@@ -1,20 +1,15 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getModel, MODELS } from '@/lib/gemini'
 import { withLimit } from '@/lib/with-limits'
+import { serverError } from '@/lib/validation'
 
-export const GET = withLimit(async (_req: NextRequest) => {
+// Authenticated health check for the Gemini integration.
+export const GET = withLimit(async () => {
   try {
     const model = getModel('summarize')
     const result = await model.generateContent('Reply with "pong".')
-    
-    const text = result.response.text()
-
-    return NextResponse.json({ ok: true, model: MODELS.summarize, reply: text })
-  } catch (err: any) {
-    console.error('Gemini ping error:', err)
-    return NextResponse.json(
-      { ok: false, error: err?.message ?? 'Gemini call failed' }, 
-      { status: 500 }
-    )
+    return NextResponse.json({ ok: true, model: MODELS.summarize, reply: result.response.text() })
+  } catch (err) {
+    return serverError('Gemini ping error', err, 'Gemini call failed')
   }
-}, 'ai:ping', 20, 60_000)
+}, 'ai:ping', 5, 60_000)

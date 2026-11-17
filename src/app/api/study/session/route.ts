@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getAuthedUser } from '@/lib/server-auth'
+import { serverError } from '@/lib/validation'
 
 export async function GET(req: NextRequest) {
   try {
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
     const remaining = Math.max(0, limit - dueCards.length)
     const newCards = remaining
       ? await db.flashcard.findMany({
-          where: { ...where, repetitions: 0, id: { notIn: dueCards.map((c) => c.id) } },
+          // Never-reviewed cards only; failed cards wait until their due date.
+          where: { ...where, lastReviewedAt: null, id: { notIn: dueCards.map((c) => c.id) } },
           orderBy: [{ createdAt: 'desc' }],
           take: remaining,
           include: { note: { select: { id: true, title: true } } },
@@ -54,9 +56,8 @@ export async function GET(req: NextRequest) {
         newCount: newCards.length,
       },
     })
-  } catch (error: any) {
-    console.error('Study session error:', error)
-    return NextResponse.json({ error: error?.message ?? 'Failed to build study session' }, { status: 500 })
+  } catch (error) {
+    return serverError('Failed to build study session', error, 'Failed to build study session')
   }
 }
 

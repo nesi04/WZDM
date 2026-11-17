@@ -3,6 +3,7 @@ type Key = string
 type Bucket = { tokens: number; ts: number }
 
 const buckets = new Map<Key, Bucket>()
+const MAX_BUCKETS = 10_000
 
 /**
  * Token bucket limiter.
@@ -24,5 +25,15 @@ export function allow(key: Key, rate = 60, intervalMs = 60_000) {
   }
   b.tokens -= 1
   buckets.set(key, b)
+
+  // Keep memory bounded: drop the oldest entries once the map grows too large.
+  if (buckets.size > MAX_BUCKETS) {
+    const excess = buckets.size - MAX_BUCKETS
+    let i = 0
+    for (const k of buckets.keys()) {
+      if (i++ >= excess) break
+      buckets.delete(k)
+    }
+  }
   return true
 }
